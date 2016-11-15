@@ -7,7 +7,7 @@ class NP_ExtensibleSearch extends NucleusPlugin {
     function getVersion()          { return '0.12'; }
     function getMinNucleusVersion() { return '350'; }
     function getDescription()      { return 'Plugin Extensible Search. It can replace searchresults'; }
-    function supportsFeature($key) { return (int)in_array($key, array('SqlTablePrefix', 'exclude')); }
+    function supportsFeature($key) { return (int)in_array($key, array('SqlTablePrefix', 'SqlApi', 'exclude')); }
     /**
      * 
      */
@@ -87,7 +87,7 @@ class NP_ExtensibleSearch extends NucleusPlugin {
     {
         $res = sql_query($query);
         $array = array();
-        while ($itemid = mysql_fetch_row($res))
+        while ($itemid = sql_fetch_row($res))
         {
             array_push($array, $itemid[0]);
         }
