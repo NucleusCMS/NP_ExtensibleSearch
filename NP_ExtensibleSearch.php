@@ -140,7 +140,7 @@ class NP_ExtensibleSearch extends NucleusPlugin
     /**
      * doSkinVar
      */
-    function doSkinVar($skinType, $template, $maxresults=50)
+    function doSkinVar($skinType, $template='', $maxresults=50)
     {
         global $blog, $query, $amount, $startpos, $manager;
         
