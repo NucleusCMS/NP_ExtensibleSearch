@@ -1,15 +1,5 @@
 <?php
-// plugin needs to work on Nucleus versions <=2.0 as well
-if (!function_exists('sql_table'))
-{
-    function sql_table($name)
-    {
-        return 'nucleus_' . $name;
-    }
-}
-
-class NP_ExtensibleSearch extends NucleusPlugin
-{
+class NP_ExtensibleSearch extends NucleusPlugin {
 
     function getName()             { return 'Extensible Search'; }
     function getAuthor()           { return 'Andy, sato(na)'; }
