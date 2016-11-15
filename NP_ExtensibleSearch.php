@@ -2,9 +2,9 @@
 class NP_ExtensibleSearch extends NucleusPlugin {
 
     function getName()             { return 'Extensible Search'; }
-    function getAuthor()           { return 'Andy, sato(na)'; }
-    function getURL()              { return 'http://www.matsubarafamily.com/lab/'; }
-    function getVersion()          { return '0.12'; }
+    function getAuthor()           { return 'Andy, sato(na), yamamoto'; }
+    function getURL()              { return 'https://github.com/NucleusCMS/NP_ExtensibleSearch'; }
+    function getVersion()          { return '0.2'; }
     function getMinNucleusVersion() { return '350'; }
     function getDescription()      { return 'Plugin Extensible Search. It can replace searchresults'; }
     function supportsFeature($key) { return (int)in_array($key, array('SqlTablePrefix', 'SqlApi', 'exclude')); }
