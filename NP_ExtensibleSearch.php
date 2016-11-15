@@ -24,7 +24,7 @@ class NP_ExtensibleSearch extends NucleusPlugin
     {
         global $blog, $manager;
         
-        $searchclass = & new SEARCH($query);
+        $searchclass = new SEARCH($query);
         $highlight   = $searchclass->inclusive;
         
         // if querystring is empty, return empty string
