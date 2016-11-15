@@ -63,7 +63,8 @@ class NP_ExtensibleSearch extends NucleusPlugin
         
         $items          = $this->getArray($sqlquery);
         $exclusionitems = array();
-        $manager->notify('PreSearchResults',array('blogs' => &$blogs, 'items' => &$items, 'query' => $query, 'exclusionitems' => &$exclusionitems));
+        $param = array('blogs' => &$blogs, 'items' => &$items, 'query' => $query, 'exclusionitems' => &$exclusionitems);
+        $manager->notify('PreSearchResults',$param);
         if (count($exclusionitems))
         {
             $exclusionitems = array_unique($exclusionitems);
@@ -144,9 +145,11 @@ class NP_ExtensibleSearch extends NucleusPlugin
     {
         global $blog, $query, $amount, $startpos, $manager;
         
-        $manager->notify('PreBlogContent',array('blog' => &$blog, 'type' => 'searchresults'));
+        $param = array('blog' => &$blog, 'type' => 'searchresults');
+        $manager->notify('PreBlogContent',$param);
         
         $this->amountfound = $this->search($query, $template, $amount, $maxresults, $startpos);
-        $manager->notify('PostBlogContent',array('blog' => &$blog, 'type' => 'searchresults'));
+        $param = array('blog' => &$blog, 'type' => 'searchresults');
+        $manager->notify('PostBlogContent',$param);
     }
 }
