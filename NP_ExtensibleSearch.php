@@ -5,6 +5,7 @@ class NP_ExtensibleSearch extends NucleusPlugin {
     function getAuthor()           { return 'Andy, sato(na)'; }
     function getURL()              { return 'http://www.matsubarafamily.com/lab/'; }
     function getVersion()          { return '0.12'; }
+    function getMinNucleusVersion() { return '350'; }
     function getDescription()      { return 'Plugin Extensible Search. It can replace searchresults'; }
     function supportsFeature($key) { return (int)in_array($key, array('SqlTablePrefix', 'exclude')); }
     /**
