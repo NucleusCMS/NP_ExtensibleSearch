@@ -8,9 +8,7 @@ class NP_ExtensibleSearch extends NucleusPlugin {
     function getMinNucleusVersion() { return '350'; }
     function getDescription()      { return 'Plugin Extensible Search. It can replace searchresults'; }
     function supportsFeature($key) { return (int)in_array($key, array('SqlTablePrefix', 'SqlApi', 'exclude')); }
-    /**
-     * 
-     */
+    
     function getSqlQuery($query, $amountMonths = 0, &$highlight, $mode = '')
     {
         global $blog, $manager;
@@ -22,20 +20,17 @@ class NP_ExtensibleSearch extends NucleusPlugin {
         if ($searchclass->inclusive == '') return '';
         
         $where  = $searchclass->boolean_sql_where('ititle,ibody,imore');
-        $select = $searchclass->boolean_sql_select('ititle,ibody,imore');
         
         // get list of blogs to search
         $blogs       = $searchclass->blogs;       // array containing blogs that always need to be included
         $blogs[]     = $blog->getID();            // also search current blog (duh)
         $blogs       = array_unique($blogs);      // remove duplicates
-        $selectblogs = '';
-        if (count($blogs) > 0) $selectblogs = ' and i.iblog in (' . implode(',', $blogs) . ')';
-        $sqlquery = 'SELECT i.inumber as itemid ';
-        if ($select)
-        {
-            $sqlquery .= ', '.$select. ' as score ';
-        }
-        $sqlquery .= ' FROM '.sql_table('item').' as i, '.sql_table('member').' as m, '.sql_table('category').' as c'
+        $selectblogs = (count($blogs) > 0) ? sprintf(' and i.iblog in (%s)',implode(',', $blogs)) : '';
+        
+        $select = $searchclass->boolean_sql_select('ititle,ibody,imore');
+        
+        $query = 'SELECT i.inumber as itemid ';
+        $query .= ' FROM '. $this->_getTableString(array('i'=>'item','m'=>'member','c'=>'category'))
                 . ' WHERE i.iauthor=m.mnumber'
                 . ' and i.icat=c.catid'
                 . ' and i.idraft=0'   // exclude drafts
@@ -45,14 +40,8 @@ class NP_ExtensibleSearch extends NucleusPlugin {
                 . ' and '.$where;
         
         // take into account amount of months to search
-        if ($amountMonths > 0)
-        {
-            $localtime = getdate($blog->getCorrectTime());
-            $timestamp_start = mktime(0,0,0,$localtime['mon'] - $amountMonths,1,$localtime['year']);
-            $sqlquery .= ' and i.itime>' . mysqldate($timestamp_start);
-        }
+        $items = $this->getArray($query);
         
-        $items          = $this->getArray($sqlquery);
         $exclusionitems = array();
         $param = array('blogs' => &$blogs, 'items' => &$items, 'query' => $query, 'exclusionitems' => &$exclusionitems);
         $manager->notify('PreSearchResults',$param);
@@ -65,21 +54,80 @@ class NP_ExtensibleSearch extends NucleusPlugin {
         
         if ($mode == '')
         {
-            $sqlquery = 'SELECT i.inumber as itemid, i.ititle as title, i.ibody as body, m.mname as author, m.mrealname as authorname, i.itime, i.imore as more, m.mnumber as authorid, m.memail as authormail, m.murl as authorurl, c.cname as category, i.icat as catid, i.iclosed as closed';
-            $sqlquery .= ' FROM '.sql_table('item').' as i, '.sql_table('member').' as m, '.sql_table('category').' as c'
-                . ' WHERE i.iauthor=m.mnumber'
-                . ' and i.icat=c.catid';
-            $sqlquery .= $items ? ' and i.inumber in (' . implode(',', $items) . ')' : ' and 1=2 ';
-            $sqlquery .= $select ? ' ORDER BY score DESC' : ' ORDER BY i.itime DESC ';
+            $queryParams = array();
+            
+            $_ = array();
+            $_['itemid']     = 'i.inumber';
+            $_['title']      = 'i.ititle';
+            $_['body']       = 'i.ibody';
+            $_['author']     = 'm.mname';
+            $_['authorname'] = 'm.mrealname';
+            $_['i.itime']    = 'i.itime';
+            $_['more']       = 'i.imore';
+            $_['authorid']   = 'm.mnumber';
+            $_['authormail'] = 'm.memail';
+            $_['authorurl']  = 'm.murl';
+            $_['category']   = 'c.cname';
+            $_['catid']      = 'i.icat';
+            $_['closed']     = 'i.iclosed';
+            if($select)
+                 $_['score'] = $select;
+            
+            $queryParams['fields'] = $this->_getFieldsString($_);
+            
+            $_ = array();
+            $_['i'] = 'item';
+            $_['m'] = 'member';
+            $_['c'] = 'category';
+            $queryParams['from'] = $this->_getTableString($_);
+            
+            $_ = array();
+            $_[] = 'i.iauthor=m.mnumber';
+            $_[] = 'and i.icat=c.catid';
+            $_[] = 'and i.idraft=0';
+            $_[] = $selectblogs;
+            $_[] = 'and i.itime<=' . mysqldate($blog->getCorrectTime()); // don't show future items
+            $_[] = 'and '.$where;
+            $_[] = $items  ? 'and i.inumber in (' . implode(',', $items) . ')' : ' and 1=2 ';
+            if ( 0 < $amountMonths ) {
+                $localtime = getdate($blog->getCorrectTime());
+                $timestamp_start = mktime(0,0,0,$localtime['mon'] - $amountMonths,1,$localtime['year']);
+                $_[] = 'and i.itime>' . mysqldate($timestamp_start);
+            }
+            $queryParams['where']   = join(' ', $_);
+            $queryParams['orderby'] = $select ? 'score DESC' : 'i.itime DESC ';
+            
+            $query = vsprintf("SELECT %s FROM %s WHERE %s ORDER BY %s", $queryParams);
         }
         else
         {
-            $sqlquery = 'SELECT COUNT(*) FROM '.sql_table('item').' as i WHERE ';
-            $sqlquery .= $items ? ' and i.inumber in (' . implode(',', $items) . ')' : ' and 1=2 ';
+            $query = 'SELECT COUNT(*) FROM '.sql_table('item').' as i WHERE ';
+            $query .= $items ? sprintf(' and i.inumber in (%s)', implode(',', $items)) : ' and 1=2 ';
             
         }
-        return $sqlquery;
+        return $query;
     }
+    
+    function _getFieldsString($fields=array()) {
+        
+        if(empty($fields)) return '*';
+        
+        $_ = array();
+        foreach($fields as $k=>$v) {
+            if($k!==$v) $_[] = "{$v} as {$k}";
+            else        $_[] = $v;
+        }
+        return join(',', $_);
+    }
+    
+    function _getTableString($tables=array()) {
+        $_ = array();
+        foreach($tables as $k=>$v) {
+            $_[] = sql_table($v) . ' as ' . $k;
+        }
+        return join(',', $_);
+    }
+    
     /**
      * 
      */
