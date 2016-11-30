@@ -154,8 +154,8 @@ class NP_ExtensibleSearch extends NucleusPlugin {
         if (!$sqlquery)
         {
             // no query -> show everything
-                $extraquery = '';
-             $amountfound = $blog->readLogAmount($template, $maxresults, $extraQuery, $query, 1, 1);
+            $extraquery = '';
+            $amountfound = $blog->readLogAmount($template, $maxresults, $extraquery, $query, 1, 1);
         }
         else
         {
